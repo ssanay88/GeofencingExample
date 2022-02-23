@@ -2,11 +2,16 @@ package com.example.geofencingex
 
 import android.Manifest
 import android.app.PendingIntent
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.location.Location
+import android.location.LocationListener
+import android.location.LocationManager
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import com.google.android.gms.location.Geofence
@@ -19,10 +24,14 @@ class MainActivity : AppCompatActivity() {
     private val MY_PERMISSIONS_REQ_ACCESS_FINE_LOCATION = 100
     private val MY_PERMISSIONS_REQ_ACCESS_BACKGROUND_LOCATION = 101
 
+    var mLocationManager: LocationManager? = null    // 위치 서비스에 접근하는 클래스를 제공
+    var mLocationListener: LocationListener? = null    // 위치가 변할 때 LocationManager로부터 notification을 받는 용도
+
     val geofenceList: MutableList<Geofence> by lazy {
         mutableListOf(
             getGeofence("우리집", Pair(35.1389,129.1056)),
-            getGeofence("GS25", Pair(35.1367,129.1035))
+            getGeofence("GS25", Pair(35.1367,129.1035)),
+            getGeofence("저기저기", Pair(35.1325,129.0984))
         )
     }
 
@@ -31,11 +40,36 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         checkPermission()
-        addGeofences()
+        AddGeofences()
+
+        mLocationManager = getSystemService(LOCATION_SERVICE) as LocationManager
+        mLocationListener = object : LocationListener {
+            override fun onLocationChanged(location: Location) {
+                var lat = 0.0
+                var lng = 0.0
+                if (location != null) {
+                    lat = location.latitude
+                    lng = location.longitude
+                    Log.d("로그", " 현재 위치는 $lat , $lng ")
+                }
+
+                Toast.makeText(this@MainActivity,"현재 위치는 $lat , $lng 입니다.",Toast.LENGTH_SHORT).show()
+
+
+            }
+        }
+
+        mLocationManager!!.requestLocationUpdates(
+            LocationManager.GPS_PROVIDER,
+            3000L,
+            30f, mLocationListener as LocationListener
+        )
+
+
 
     }
 
-    private fun addGeofences() {
+    private fun AddGeofences() {
         checkPermission()
         geofencingClient.addGeofences(getGeofencingRequest(geofenceList), geofencePendingIntent).run {
             addOnSuccessListener {
@@ -59,7 +93,7 @@ class MainActivity : AppCompatActivity() {
     private fun getGeofencingRequest(list: List<Geofence>): GeofencingRequest {
         return GeofencingRequest.Builder().apply {
             // Geofence 이벤트는 진입시 부터 처리할 때
-            setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
+            setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER or GeofencingRequest.INITIAL_TRIGGER_EXIT or GeofencingRequest.INITIAL_TRIGGER_DWELL)
             addGeofences(list)    // Geofence 리스트 추가
         }.build()
     }
@@ -69,7 +103,7 @@ class MainActivity : AppCompatActivity() {
             .setRequestId(reqId)    // 이벤트 발생시 BroadcastReceiver에서 구분할 id
             .setCircularRegion(geo.first, geo.second, radius)    // 위치 및 반경(m)
             .setExpirationDuration(Geofence.NEVER_EXPIRE)        // Geofence 만료 시간
-            .setLoiteringDelay(10000)                            // 머물기 체크 시간
+            .setLoiteringDelay(1000)                            // 머물기 체크 시간
             .setTransitionTypes(
                 Geofence.GEOFENCE_TRANSITION_ENTER                // 진입 감지시
                         or Geofence.GEOFENCE_TRANSITION_EXIT    // 이탈 감지시
