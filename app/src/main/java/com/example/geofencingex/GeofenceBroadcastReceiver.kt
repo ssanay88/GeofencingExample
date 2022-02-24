@@ -51,7 +51,6 @@ class GeofenceBroadcastReceiver: BroadcastReceiver() {
                 Log.d("GeofenceBR","${it.requestId} - $transitionMsg")
                 Toast.makeText(context, "${it.requestId} - $transitionMsg", Toast.LENGTH_LONG).show()
 
-
             }
 
         } else {

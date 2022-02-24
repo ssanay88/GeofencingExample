@@ -27,11 +27,21 @@ class MainActivity : AppCompatActivity() {
     var mLocationManager: LocationManager? = null    // 위치 서비스에 접근하는 클래스를 제공
     var mLocationListener: LocationListener? = null    // 위치가 변할 때 LocationManager로부터 notification을 받는 용도
 
+    // 첫번째 지오펜싱 리스트
     val geofenceList: MutableList<Geofence> by lazy {
         mutableListOf(
             getGeofence("우리집", Pair(35.1389,129.1056)),
             getGeofence("GS25", Pair(35.1367,129.1035)),
             getGeofence("저기저기", Pair(35.1325,129.0984))
+        )
+    }
+
+    // 두번째 지오펜싱 리스트
+    val geofenceList2: MutableList<Geofence> by lazy {
+        mutableListOf(
+            getGeofence("먼곳", Pair(35.1336,129.0897)),
+            getGeofence("대연초", Pair(35.1374,129.0920)),
+            getGeofence("우리집", Pair(35.1389,129.1056))
         )
     }
 
@@ -89,6 +99,7 @@ class MainActivity : AppCompatActivity() {
     private val geofencingClient: GeofencingClient by lazy {
         LocationServices.getGeofencingClient(this)
     }
+
 
     private fun getGeofencingRequest(list: List<Geofence>): GeofencingRequest {
         return GeofencingRequest.Builder().apply {
